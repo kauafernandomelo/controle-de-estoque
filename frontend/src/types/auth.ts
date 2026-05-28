@@ -2,7 +2,6 @@ export interface UserRead {
   id: string
   nome: string
   email: string
-  perfil: 'ADMINISTRADOR' | 'OPERADOR'
   ativo: boolean
   created_at: string
   updated_at: string
@@ -18,10 +17,6 @@ export interface UserRegister {
   nome: string
   email: string
   senha: string
-}
-
-export interface UserCreate extends UserRegister {
-  perfil: 'ADMINISTRADOR' | 'OPERADOR'
 }
 
 export interface AuthState {

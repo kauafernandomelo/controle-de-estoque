@@ -6,6 +6,7 @@ interface Toast {
   id: number
   type: ToastType
   message: string
+  exiting?: boolean
 }
 
 interface ToastContextType {
@@ -17,42 +18,46 @@ const ToastContext = createContext<ToastContextType>({ toast: () => {} })
 export const useToast = () => useContext(ToastContext)
 
 let nextId = 0
+const MAX_TOASTS = 5
+
+const COLORS: Record<ToastType, string> = {
+  success: '#16a34a',
+  error: '#dc2626',
+  info: '#2563eb',
+}
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
+  const removeToast = useCallback((id: number) => {
+    setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)))
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 250)
+  }, [])
+
   const addToast = useCallback((message: string, type: ToastType = 'info') => {
     const id = ++nextId
-    setToasts((prev) => [...prev, { id, type, message }])
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500)
-  }, [])
+    setToasts((prev) => {
+      const next = [...prev, { id, type, message }]
+      return next.length > MAX_TOASTS ? next.slice(-MAX_TOASTS) : next
+    })
+    setTimeout(() => removeToast(id), 3500)
+  }, [removeToast])
 
   return (
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
-      <div style={{
-        position: 'fixed', top: 16, right: 16, zIndex: 9999,
-        display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 400,
-      }}>
+      <div className="toast-container">
         {toasts.map((t) => (
           <div
             key={t.id}
-            style={{
-              padding: '12px 16px', borderRadius: 8,
-              background: t.type === 'success' ? '#16a34a'
-                : t.type === 'error' ? '#dc2626' : '#2563eb',
-              color: '#fff', fontSize: '0.9rem',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              animation: 'slideIn 0.25s ease-out',
-            }}
+            className={`toast toast-${t.type}${t.exiting ? ' toast-exit' : ''}`}
+            style={{ background: COLORS[t.type] }}
           >
-            {t.message}
+            <span className="toast-message">{t.message}</span>
+            <button className="toast-close" onClick={() => removeToast(t.id)} type="button">×</button>
           </div>
         ))}
       </div>
-      <style>{`
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-      `}</style>
     </ToastContext.Provider>
   )
 }

@@ -6,12 +6,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ProductBase(BaseModel):
-    """Shared product fields."""
-
     name: str = Field(min_length=2, max_length=160, alias="nome")
     sku: str = Field(min_length=2, max_length=64)
     description: str | None = Field(default=None, alias="descricao")
     category: str = Field(min_length=2, max_length=120, alias="categoria")
+    ean: str | None = Field(default=None, max_length=13)
     cost_price: Decimal = Field(ge=0, decimal_places=2, alias="preco_custo")
     sale_price: Decimal = Field(ge=0, decimal_places=2, alias="preco_venda")
     stock_quantity: int = Field(default=0, ge=0, alias="quantidade_estoque")
@@ -23,22 +22,19 @@ class ProductBase(BaseModel):
     @field_validator("sku")
     @classmethod
     def normalize_sku(cls, value: str) -> str:
-        """Normalize SKU values to avoid duplicate variants by case or spaces."""
-
         return value.strip().upper()
 
 
 class ProductCreate(ProductBase):
-    """Payload for product creation."""
+    pass
 
 
 class ProductUpdate(BaseModel):
-    """Payload for partial product updates."""
-
     name: str | None = Field(default=None, min_length=2, max_length=160, alias="nome")
     sku: str | None = Field(default=None, min_length=2, max_length=64)
     description: str | None = Field(default=None, alias="descricao")
     category: str | None = Field(default=None, min_length=2, max_length=120, alias="categoria")
+    ean: str | None = Field(default=None, max_length=13)
     cost_price: Decimal | None = Field(default=None, ge=0, decimal_places=2, alias="preco_custo")
     sale_price: Decimal | None = Field(default=None, ge=0, decimal_places=2, alias="preco_venda")
     stock_quantity: int | None = Field(default=None, ge=0, alias="quantidade_estoque")
@@ -50,14 +46,10 @@ class ProductUpdate(BaseModel):
     @field_validator("sku")
     @classmethod
     def normalize_sku(cls, value: str | None) -> str | None:
-        """Normalize SKU values when provided."""
-
         return value.strip().upper() if value else value
 
 
 class ProductRead(ProductBase):
-    """Product response schema."""
-
     id: UUID
     created_at: datetime
     updated_at: datetime

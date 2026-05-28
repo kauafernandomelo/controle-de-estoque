@@ -3,6 +3,7 @@ import api from '../../api/client'
 import { formatDate, translateMovementType } from '../../utils/format'
 import type { MovementRead, MovementType } from '../../types/movement'
 
+const PAGE_SIZE = 30
 const typeColors: Record<MovementType, string> = {
   ENTRADA: 'badge-success',
   SAIDA: 'badge-danger',
@@ -11,25 +12,38 @@ const typeColors: Record<MovementType, string> = {
 
 export function MovementList() {
   const [movements, setMovements] = useState<MovementRead[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [products, setProducts] = useState<{ id: string; nome: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [filterType, setFilterType] = useState('')
+  const [filterProduct, setFilterProduct] = useState('')
+  const [page, setPage] = useState(0)
   const [modalOpen, setModalOpen] = useState(false)
   const [successMsg, setSuccessMsg] = useState('')
 
   const fetchMovements = useCallback(async () => {
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
-      const { data } = await api.get<MovementRead[]>('/movements')
+      const params: Record<string, string | number> = { limit: PAGE_SIZE, offset: page * PAGE_SIZE }
+      if (filterType) params.tipo = filterType
+      if (filterProduct) params.produto_id = filterProduct
+      const { data, headers } = await api.get<MovementRead[]>('/movements', { params })
       setMovements(data)
-    } catch {
-      setError('Erro ao carregar movimentações.')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+      setTotalCount(Number(headers['x-total-count'] || data.length))
+    } catch { setError('Erro ao carregar movimentações.') }
+    finally { setLoading(false) }
+  }, [filterType, filterProduct, page])
 
   useEffect(() => { fetchMovements() }, [fetchMovements])
+
+  useEffect(() => {
+    api.get<{ id: string; nome: string }[]>('/products')
+      .then(({ data }) => setProducts(data))
+      .catch(() => {})
+  }, [])
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
   const handleSaved = () => {
     setModalOpen(false)
@@ -41,14 +55,28 @@ export function MovementList() {
   return (
     <div className="page">
       <div className="page-header">
-        <h1 className="page-title">Movimentações</h1>
-        <button className="btn btn-primary" onClick={() => setModalOpen(true)} type="button">
-          + Nova Movimentação
-        </button>
+        <h1 className="page-title">Movimentações {totalCount > 0 && <span className="text-muted" style={{fontSize:'0.9rem',fontWeight:400}}>({totalCount})</span>}</h1>
+        <button className="btn btn-primary" onClick={() => setModalOpen(true)} type="button">+ Nova Movimentação</button>
       </div>
 
-      {successMsg && <div className="login-error" style={{ background: '#f0fdf4', color: '#166534', borderColor: '#bbf7d0', marginBottom: 16 }}>{successMsg}</div>}
+      {successMsg && <div className="toast" style={{ background: 'var(--success)', marginBottom: 16, animation: 'none' }}>{successMsg}</div>}
       {error && <div className="login-error" style={{ marginBottom: 16 }}>{error}</div>}
+
+      <div className="filters-bar">
+        <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setPage(0) }}>
+          <option value="">Todos os tipos</option>
+          <option value="ENTRADA">Entrada</option>
+          <option value="SAIDA">Saída</option>
+          <option value="AJUSTE">Ajuste</option>
+        </select>
+        <select value={filterProduct} onChange={(e) => { setFilterProduct(e.target.value); setPage(0) }}>
+          <option value="">Todos os produtos</option>
+          {products.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+        </select>
+        {(filterType || filterProduct) && (
+          <button className="btn btn-sm btn-ghost" type="button" onClick={() => { setFilterType(''); setFilterProduct(''); setPage(0) }}>Limpar filtros</button>
+        )}
+      </div>
 
       <div className="table-wrapper">
         <table className="table">
@@ -79,16 +107,24 @@ export function MovementList() {
               movements.map((m) => (
                 <tr key={m.id}>
                   <td><span className={`badge ${typeColors[m.tipo_movimentacao]}`}>{translateMovementType(m.tipo_movimentacao)}</span></td>
-                  <td><code>{m.produto_id.slice(0, 8)}...</code></td>
-                  <td>{m.quantidade}</td>
+                  <td>{m.produto_nome || m.produto_id.slice(0, 8) + '...'}</td>
+                  <td style={{ fontWeight: 600 }}>{m.quantidade}</td>
                   <td className="text-muted">{m.observacao || '---'}</td>
-                  <td>{formatDate(m.created_at)}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{formatDate(m.created_at)}</td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button className="btn btn-sm btn-outline" disabled={page === 0} onClick={() => setPage(p => p - 1)} type="button">← Anterior</button>
+          <span className="pagination-info">Página {page + 1} de {totalPages} ({totalCount} registros)</span>
+          <button className="btn btn-sm btn-outline" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} type="button">Próxima →</button>
+        </div>
+      )}
 
       {modalOpen && (
         <div className="modal-overlay" onClick={() => setModalOpen(false)}>
@@ -115,6 +151,7 @@ function MovementForm({
   onCancel: () => void
 }) {
   const [products, setProducts] = useState<{ id: string; nome: string; sku: string }[]>([])
+  const [loadingProducts, setLoadingProducts] = useState(true)
   const [form, setForm] = useState({
     produto_id: '',
     tipo_movimentacao: 'ENTRADA' as MovementType,
@@ -125,7 +162,8 @@ function MovementForm({
   const [error, setError] = useState('')
 
   useEffect(() => {
-    api.get('/products').then(({ data }) => setProducts(data)).catch(() => {})
+    api.get('/products').then(({ data }) => { setProducts(data); setLoadingProducts(false) })
+      .catch(() => { setLoadingProducts(false) })
   }, [])
 
   const set = (field: string, value: string | number) =>
@@ -134,20 +172,16 @@ function MovementForm({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!form.produto_id) { setError('Selecione um produto.'); return }
-    setSaving(true)
-    setError('')
+    setSaving(true); setError('')
     try {
       await api.post('/movements', form)
       onSaved()
     } catch (err: unknown) {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Erro ao registrar movimentação.'
-          : 'Erro ao registrar movimentação.'
+      const msg = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Erro ao registrar movimentação.'
+        : 'Erro ao registrar movimentação.'
       setError(msg)
-    } finally {
-      setSaving(false)
-    }
+    } finally { setSaving(false) }
   }
 
   return (
@@ -157,7 +191,7 @@ function MovementForm({
       <div className="form-group">
         <label htmlFor="produto">Produto *</label>
         <select id="produto" value={form.produto_id} onChange={(e) => set('produto_id', e.target.value)} required>
-          <option value="">Selecione um produto...</option>
+          <option value="">{loadingProducts ? 'Carregando produtos...' : 'Selecione um produto...'}</option>
           {products.map((p) => (
             <option key={p.id} value={p.id}>{p.nome} ({p.sku})</option>
           ))}
@@ -187,12 +221,7 @@ function MovementForm({
       <div className="form-actions">
         <button className="btn btn-outline" type="button" onClick={onCancel}>Cancelar</button>
         <button className="btn btn-primary" type="submit" disabled={saving}>
-          {saving ? (
-            <span className="btn-loading">
-              <span className="btn-spinner" />
-              Registrando...
-            </span>
-          ) : 'Registrar'}
+          {saving ? <span className="btn-loading"><span className="btn-spinner" /> Registrando...</span> : 'Registrar'}
         </button>
       </div>
     </form>

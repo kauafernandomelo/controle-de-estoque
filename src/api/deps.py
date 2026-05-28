@@ -4,10 +4,9 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from src.core.exceptions import AppException, ForbiddenError
+from src.core.exceptions import AppException
 from src.core.security import decode_token
 from src.database.session import get_db
-from src.models.enums import UserRole
 from src.models.user import User
 from src.repositories.user_repository import UserRepository
 
@@ -15,8 +14,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
-    """Resolve the authenticated user from an access token."""
-
     try:
         payload = decode_token(token)
         if payload.get("type") != "access":
@@ -31,9 +28,10 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 
-def require_admin(current_user: User = Depends(get_current_user)) -> User:
-    """Ensure the current user has administrator permissions."""
+get_auth_user = get_current_user
 
-    if current_user.role != UserRole.ADMIN:
-        raise ForbiddenError()
-    return current_user
+__all__ = [
+    "get_auth_user",
+    "get_current_user",
+    "get_db",
+]

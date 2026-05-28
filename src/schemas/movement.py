@@ -32,6 +32,7 @@ class MovementRead(BaseModel):
 
     id: UUID
     product_id: UUID = Field(alias="produto_id")
+    product_name: str = Field(alias="produto_nome")
     user_id: UUID = Field(alias="usuario_id")
     movement_type: MovementType = Field(alias="tipo_movimentacao")
     quantity: int = Field(alias="quantidade")

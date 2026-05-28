@@ -52,4 +52,4 @@ class MovementService:
     def list(self, skip: int = 0, limit: int = 100) -> list[Movement]:
         """List stock movement history."""
 
-        return self.movements.list(skip=skip, limit=limit)
+        return self.movements.list_movements(skip=skip, limit=limit)

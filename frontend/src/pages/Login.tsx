@@ -44,7 +44,7 @@ export function Login() {
         <div className="login-header">
           <span className="login-icon">📋</span>
           <h1>Controle de Estoque</h1>
-          <p>Gerencie seus produtos, movimentações e relatórios</p>
+          <p>Gerencie seus produtos e movimentações</p>
         </div>
 
         <div className="login-tabs">
@@ -117,12 +117,6 @@ export function Login() {
             )}
           </button>
         </form>
-
-        {tab === 'register' && (
-          <p className="login-hint">
-            O <strong>primeiro usuário</strong> cadastrado será administrador.
-          </p>
-        )}
       </div>
     </div>
   )

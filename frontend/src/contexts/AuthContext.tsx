@@ -6,10 +6,9 @@ interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
   logout: () => void
-  isAdmin: boolean
 }
 
-function decodeToken(token: string): { sub: string; role: string } | null {
+function decodeToken(token: string): { sub: string } | null {
   try {
     return JSON.parse(atob(token.split('.')[1]))
   } catch {
@@ -40,7 +39,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: payload.sub,
           nome: '',
           email: '',
-          perfil: payload.role as UserRead['perfil'],
           ativo: true,
           created_at: '',
           updated_at: '',
@@ -49,8 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return { user, token, refreshToken, loading: false }
   })
-
-  const isAdmin = state.user?.perfil === 'ADMINISTRADOR'
 
   const saveSession = useCallback((token: string, refreshToken: string, user: UserRead) => {
     localStorage.setItem('access_token', token)
@@ -71,7 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: payload?.sub ?? '',
       nome: email.split('@')[0],
       email,
-      perfil: (payload?.role as UserRead['perfil']) ?? 'OPERADOR',
       ativo: true,
       created_at: '',
       updated_at: '',
@@ -102,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, isAdmin }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )

@@ -10,6 +10,7 @@ export interface MovementCreate {
 export interface MovementRead {
   id: string
   produto_id: string
+  produto_nome: string
   usuario_id: string
   tipo_movimentacao: MovementType
   quantidade: number

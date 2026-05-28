@@ -89,9 +89,6 @@ export function Dashboard() {
             <div className="card">
               <div className="card-header">
                 <h3>Estoque Baixo</h3>
-                <button className="btn btn-sm btn-ghost" onClick={() => navigate('/reports')} type="button">
-                  Ver mais →
-                </button>
               </div>
               {lowStock.length === 0 ? (
                 <p className="card-empty">Nenhum produto com estoque baixo.</p>
@@ -110,9 +107,6 @@ export function Dashboard() {
             <div className="card">
               <div className="card-header">
                 <h3>Últimas Movimentações</h3>
-                <button className="btn btn-sm btn-ghost" onClick={() => navigate('/movements')} type="button">
-                  Ver todas →
-                </button>
               </div>
               {recentMovements.length === 0 ? (
                 <p className="card-empty">Nenhuma movimentação registrada.</p>

@@ -15,11 +15,3 @@ export function PrivateRoute({ children }: { children: React.ReactNode }) {
   if (!token) return <Navigate to="/login" replace />
   return <>{children}</>
 }
-
-export function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { token, isAdmin, loading } = useAuth()
-  if (loading) return <PageLoader />
-  if (!token) return <Navigate to="/login" replace />
-  if (!isAdmin) return <Navigate to="/dashboard" replace />
-  return <>{children}</>
-}

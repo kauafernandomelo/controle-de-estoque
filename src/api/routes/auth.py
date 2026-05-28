@@ -15,7 +15,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def register(payload: UserRegister, db: Session = Depends(get_db)) -> UserRead:
     """Register a new user. The first registered user becomes administrator."""
 
-    return UserService(db).register(payload)
+    return UserService(db).register(payload)  # type: ignore[return-value]
 
 
 @router.post("/login", response_model=Token)

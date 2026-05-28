@@ -1,10 +1,9 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
-from src.api.deps import get_current_user, require_admin
-from src.database.session import get_db
+from src.api.deps import get_auth_user, get_db
 from src.models.user import User
 from src.schemas.product import ProductCreate, ProductRead, ProductUpdate
 from src.services.product_service import ProductService
@@ -12,71 +11,75 @@ from src.services.product_service import ProductService
 router = APIRouter(prefix="/products", tags=["products"])
 
 
-@router.post("", response_model=ProductRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ProductRead, status_code=201)
 def create_product(
-    payload: ProductCreate,
-    _: User = Depends(get_current_user),
+    data: ProductCreate,
     db: Session = Depends(get_db),
+    _: User = Depends(get_auth_user),
 ) -> ProductRead:
-    """Create a product with unique SKU."""
-
-    return ProductService(db).create(payload)
+    return ProductService(db).create(data)
 
 
 @router.get("", response_model=list[ProductRead])
 def list_products(
-    skip: int = Query(default=0, ge=0),
-    limit: int = Query(default=100, ge=1, le=200),
-    nome: str | None = Query(default=None, min_length=2),
-    _: User = Depends(get_current_user),
+    nome: str | None = Query(None),
+    categoria: str | None = Query(None),
+    estoque_baixo: bool | None = Query(None),
+    ativo: bool | None = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    response: Response = None,
     db: Session = Depends(get_db),
+    _: User = Depends(get_auth_user),
 ) -> list[ProductRead]:
-    """List products and optionally search by name."""
-
-    return ProductService(db).list(skip=skip, limit=limit, name=nome)
+    service = ProductService(db)
+    products = service.list(
+        name=nome,
+        category=categoria,
+        low_stock=estoque_baixo,
+        active=ativo,
+        limit=limit,
+        offset=offset,
+    )
+    response.headers["X-Total-Count"] = str(service.repo.count(
+        name=nome, category=categoria,
+        low_stock=estoque_baixo, active=ativo,
+    ))
+    return products
 
 
 @router.get("/sku/{sku}", response_model=ProductRead)
 def get_product_by_sku(
     sku: str,
-    _: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    _: User = Depends(get_auth_user),
 ) -> ProductRead:
-    """Find a product by SKU."""
-
     return ProductService(db).get_by_sku(sku)
 
 
 @router.get("/{product_id}", response_model=ProductRead)
 def get_product(
     product_id: UUID,
-    _: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    _: User = Depends(get_auth_user),
 ) -> ProductRead:
-    """Find a product by id."""
-
-    return ProductService(db).get(product_id)
+    return ProductService(db).get_by_id(product_id)
 
 
 @router.patch("/{product_id}", response_model=ProductRead)
 def update_product(
     product_id: UUID,
-    payload: ProductUpdate,
-    _: User = Depends(get_current_user),
+    data: ProductUpdate,
     db: Session = Depends(get_db),
+    _: User = Depends(get_auth_user),
 ) -> ProductRead:
-    """Update product data."""
-
-    return ProductService(db).update(product_id, payload)
+    return ProductService(db).update(product_id, data)
 
 
-@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{product_id}", status_code=204)
 def delete_product(
     product_id: UUID,
-    _: User = Depends(require_admin),
     db: Session = Depends(get_db),
-) -> Response:
-    """Delete a product without movement history. Administrator only."""
-
+    _: User = Depends(get_auth_user),
+) -> None:
     ProductService(db).delete(product_id)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -19,6 +19,7 @@ class Product(Base):
     sku: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     category: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    ean: Mapped[str | None] = mapped_column(String(13), nullable=True, unique=True)
     cost_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     sale_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     stock_quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

@@ -1,5 +1,4 @@
 import { useAuth } from '../../hooks/useAuth'
-import { translateRole } from '../../utils/format'
 
 export function Topbar() {
   const { user, logout } = useAuth()
@@ -12,7 +11,6 @@ export function Topbar() {
         </span>
       </div>
       <div className="topbar-right">
-        <span className="topbar-role">{user ? translateRole(user.perfil) : ''}</span>
         <button className="btn btn-sm btn-outline" onClick={logout} type="button">
           Sair
         </button>

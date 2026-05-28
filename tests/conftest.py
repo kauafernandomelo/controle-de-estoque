@@ -9,7 +9,19 @@ from sqlalchemy.pool import StaticPool
 from src.database.base import Base
 from src.database.session import get_db
 from src.main import app
-from src.models import Movement, Product, User  # noqa: F401
+from src.models import (  # noqa: F401
+    Brand,
+    Cart,
+    CartItem,
+    Category,
+    Movement,
+    Product,
+    ProductImage,
+    ProductReview,
+    Supplier,
+    Tag,
+    User,
+)
 
 engine = create_engine(
     "sqlite+pysqlite:///:memory:",
@@ -19,7 +31,7 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def override_get_db() -> Generator[Session, None, None]:
+def override_get_db() -> Generator[Session]:
     """Provide an isolated test database session."""
 
     db = TestingSessionLocal()
@@ -30,7 +42,7 @@ def override_get_db() -> Generator[Session, None, None]:
 
 
 @pytest.fixture(autouse=True)
-def reset_database() -> Generator[None, None, None]:
+def reset_database() -> Generator[None]:
     """Recreate all tables before each test."""
 
     Base.metadata.drop_all(bind=engine)
@@ -39,7 +51,7 @@ def reset_database() -> Generator[None, None, None]:
 
 
 @pytest.fixture
-def client() -> Generator[TestClient, None, None]:
+def client() -> Generator[TestClient]:
     """Return a FastAPI test client with database dependency overridden."""
 
     app.dependency_overrides[get_db] = override_get_db

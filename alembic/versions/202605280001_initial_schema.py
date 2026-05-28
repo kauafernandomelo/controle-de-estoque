@@ -19,9 +19,8 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     user_role = sa.Enum("ADMINISTRADOR", "OPERADOR", name="user_role")
     movement_type = sa.Enum("ENTRADA", "SAIDA", "AJUSTE", name="movement_type")
-    user_role.create(op.get_bind(), checkfirst=True)
-    movement_type.create(op.get_bind(), checkfirst=True)
 
+   
     op.create_table(
         "users",
         sa.Column("id", sa.Uuid(), nullable=False),
