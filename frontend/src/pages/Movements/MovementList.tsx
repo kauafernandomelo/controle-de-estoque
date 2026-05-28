@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, type FormEvent } from 'react'
 import api from '../../api/client'
 import { formatDate, translateMovementType } from '../../utils/format'
-import type { MovementRead, MovementCreate, MovementType } from '../../types/movement'
+import type { MovementRead, MovementType } from '../../types/movement'
 
 const typeColors: Record<MovementType, string> = {
   ENTRADA: 'badge-success',

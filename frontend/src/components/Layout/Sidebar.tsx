@@ -5,7 +5,11 @@ const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: '📊', adminOnly: false },
   { to: '/products', label: 'Produtos', icon: '📦', adminOnly: false },
   { to: '/movements', label: 'Movimentações', icon: '🔄', adminOnly: false },
+  { to: '/cart', label: 'Carrinho', icon: '🛒', adminOnly: false },
   { to: '/reports', label: 'Relatórios', icon: '📈', adminOnly: false },
+  { to: '/categories', label: 'Categorias', icon: '🏷️', adminOnly: true },
+  { to: '/brands', label: 'Marcas', icon: '🏭', adminOnly: true },
+  { to: '/suppliers', label: 'Fornecedores', icon: '🚚', adminOnly: true },
   { to: '/users', label: 'Usuários', icon: '👥', adminOnly: true },
 ]
 
