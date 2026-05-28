@@ -38,6 +38,10 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
     app.include_router(api_router)
 
+    frontend_dir = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+    if frontend_dir.is_dir():
+        app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
+
     @app.get("/health", tags=["health"])
     def health_check() -> dict[str, str]:
         """Return application health status."""
